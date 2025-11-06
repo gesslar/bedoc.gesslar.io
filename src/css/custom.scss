@@ -23,6 +23,8 @@ html {
   --ifm-color-primary-lighter: #004c98;
   --ifm-color-primary-lightest: #0056ac;
 
+  --ifm-code-background: #6cb6ff !important;
+
   background-color: $--bg-light;
 }
 
@@ -35,6 +37,8 @@ html {
   --ifm-color-primary-light: #90c8ff;
   --ifm-color-primary-lighter: #a2d1ff;
   --ifm-color-primary-lightest: #d9ecff;
+
+  --ifm-code-background: #3b5774 !important;
 
   background-color: $--bg-dark;
 }
@@ -186,4 +190,19 @@ button[title*="Switch between dark and light mode"] {
   height: 40px; /* Define a fixed height */
   vertical-align: middle;
   margin-top: -4px; // aligns with navbar icons, don't mess with this unless needed!
+}
+
+/* CUSTOM */
+
+.pill {
+  background-color: var(--ifm-badge-background-color);
+  border: var(--ifm-badge-border-width) solid var(--ifm-badge-border-color);
+  border-radius: 10px;
+  color: #ffffff;
+  display: inline-block;
+  font-size: 65%;
+  font-weight: var(--ifm-font-weight-bold);
+  line-height: 1;
+  padding: var(--ifm-badge-padding-vertical) var(--ifm-badge-padding-horizontal);
+  // backdrop-filter: blur(5px);
 }

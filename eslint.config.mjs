@@ -1,8 +1,8 @@
 // eslint.config.js
-import { FlatCompat } from '@eslint/eslintrc';
-import js from '@eslint/js';
-import docusaurus from '@docusaurus/eslint-plugin';
-import babelParser from '@babel/eslint-parser';
+import { FlatCompat } from '@eslint/eslintrc'
+import js from '@eslint/js'
+import docusaurus from '@docusaurus/eslint-plugin'
+import babelParser from '@babel/eslint-parser'
 
 // Initialize compatibility layer
 const compat = new FlatCompat();

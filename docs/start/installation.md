@@ -3,8 +3,8 @@ title: Installation
 hide_title: true
 ---
 
-import Tabs from '@theme/Tabs'
-import TabItem from '@theme/TabItem'
+import Tabs from "@theme/Tabs"
+import TabItem from "@theme/TabItem"
 
 Installation of BeDoc is straightforward and can be done via npm or yarn. The
 tool was built and tested on Node.js v23.5.0.

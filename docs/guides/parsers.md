@@ -3,6 +3,13 @@ title: Parsers
 hide_title: true
 ---
 
+<!-- Import Start -->
+
+import {Required,Optional,External} from "@site/src/components/Badge"
+
+<!-- End Import -->
+
+
 This guide explains how to create custom parsers for BeDoc. Parsers are
 responsible for analyzing source code and extracting documentation information,
 producing a structured output that can be consumed and transformed by printers.
@@ -11,10 +18,12 @@ producing a structured output that can be consumed and transformed by printers.
 
 A BeDoc parser consists of four parts:
 
-1. **Meta Information**: Defines the language. (_required_)
-2. **Contract**: Specifies the parser interface. (_required_)
-3. **Parser Object**: Implements the parsing logic. (_required_)
-4. **Hooks**: Supports [hook points](/actions/hooks) for custom logic. (_optional_, _external_)
+1. **Meta Information**: Defines the language. <Required />
+2. **Contract**: Specifies the parser interface. <Required />
+3. **Parser Object**: Implements the parsing logic. <Required />
+4. **Hooks**: Supports [hook points](/actions/hooks) for custom logic.
+   <Optional />
+   <External />
 
 A parser action is contained in a JavaScript action file.
 

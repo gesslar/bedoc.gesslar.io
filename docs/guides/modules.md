@@ -1,64 +1,42 @@
 ---
-title: Getting Started with Actions
+title: Modules
 hide_title: true
 ---
 
-Actions are the core of BeDoc's functionality. They define the primary tasks
-that the tool can perform, such as parsing source code, generating
-documentation, and running custom scripts.
+<!-- Import Start -->
 
-## Parse
+import Tabs from "@theme/Tabs"
+import TabItem from "@theme/TabItem"
 
-The `parse` action reads source code files, extracts documentation information,
-and generates a structured output that can be consumed by printers. Parsers are
-responsible for analyzing the source code and producing a structured output.
-
-Read the [Parser Guide](/actions/parsers) to learn how to create parsers for
-BeDoc.
-
-## Print
-
-The `print` action transforms parsed documentation into specific output formats
-like Markdown, HTML, or any other format you need. Printers are responsible for
-formatting the documentation content.
-
-Read the [Printer Guide](/actions/printers) to learn how to create printers for
-BeDoc.
-
-## Hooks
-
-While not strictly an action, hooks provide a way to modify and enhance the
-documentation process by injecting custom logic at specific points. With full
-async/await support, hooks can integrate with external services, APIs, and
-tools.
-
-Read the [Hooks Guide](/actions/hooks) to learn how to create custom hooks for BeDoc.
-
-## Module
+<!-- End Import -->
 
 A module is any JavaScript file that contains one or more, or a combination
 of printers and parsers and exports two arrays.
 
-1. An [array of objects](#actions) providing the each action's meta information
-   and implementation.
-2. An [array of strings](#contracts) defining the contract for each action, or
+1. An **array of objects** providing each action's meta information
+   implementation.
+2. An **array of strings** defining the contract terms for each action, or
    references to external files that contain such contracts.
+
+:::info
 
 Each array must be of the same size and in the same order, with each action in
 the first array corresponding to the contract in the second.
+
+:::
 
 In this way, one may have one or more action implementations, each with its own
 contract, such that one might be able to provide any number of actions (parsers
 and printers) within the same file. Making this incredibly portable.
 
-### Actions
+## Actions
 
-The first array, is an array of objects that define the actions. Each object
+The first array is an array of objects that define the [actions](actions). Each object
 has properties and methods that BeDoc calls, if present.
 
-#### Mandatory
+### Mandatory elements
 
-##### Properties
+#### Properties
 
 - **`meta`** - The meta object within an action describes information about
   the object. It has two required properties.
@@ -72,7 +50,36 @@ has properties and methods that BeDoc calls, if present.
   - *`format`* - For printers, this identifies the output format for this
     action
 
-##### Methods
+
+<Tabs
+  defaultValue="parser"
+  values={[
+    {label: 'Parser', value: 'parser'},
+    {label: 'Printer', value: 'printer'},
+  ]}>
+  <TabItem value="parser">
+```js
+{
+  meta: {
+    action: "parse",
+    language: "lua",
+  }
+}
+```
+  </TabItem>
+  <TabItem value="printer">
+```js
+{
+  meta: {
+    action: "print",
+    format: "wikitext",
+  }
+}
+```
+  </TabItem>
+</Tabs>
+
+#### Methods
 
 - **`run({file,moduleContent})`** - The `run()` method is the interface to
   the action that is called by BeDoc to initiate it. When called, BeDoc will
@@ -91,12 +98,12 @@ has properties and methods that BeDoc calls, if present.
   In the case of a printer, it will be a structured object that has been
   produced by the parser.
 
-#### Optional
+### Optional elements
 
 Optionally, there are additional methods that may be specified in your action
 that BeDoc will call if present.
 
-##### Methods
+#### Methods
 
 - `setup({log})` - This method will be called before the `run()`, providing
   an opportunity to perform some setup functions, such as caching the passed
@@ -131,15 +138,12 @@ of the entire run.
 
 :::
 
-### Contracts
+## Contracts
 
-The second array is an array of strings that define the contract for each
-action, in the same order as the first array. Contracts are expressed as YAML
-strings, and define the expected input or output from the corresponding
-action.
+The second array is one of strings that define the contract terms for each
+action, in the same order as the first array. These are expressed as YAML or
+JSON5 strings, providing the declaration of expectation for input, in the case
+of printers and the promise of output, in the case of parsers.
 
-Each contract provides terms for what it will either output, in the case of
-parsers, or what it will accept, in the case of printers.
-
-Read the [Contracts Guide](actions/contracts) to learn how to create contracts
+Read the [Contracts Guide](contracts) to learn how to create contracts
 for BeDoc.

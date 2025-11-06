@@ -28,6 +28,8 @@
     "sass": "^1.85.0"
   },
   "devDependencies": {
+    "@babel/eslint-parser": "^7.26.8",
+    "@babel/preset-react": "^7.26.3",
     "@docusaurus/eslint-plugin": "^3.7.0",
     "@docusaurus/module-type-aliases": "3.7.0",
     "@docusaurus/types": "3.7.0",
@@ -48,5 +50,6 @@
   },
   "engines": {
     "node": ">=18.0"
-  }
+  },
+  "license": "Unlicense"
 }

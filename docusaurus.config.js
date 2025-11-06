@@ -4,7 +4,7 @@
 // There are various equivalent ways to declare your Docusaurus config.
 // See: https://docusaurus.io/docs/api/docusaurus-config
 
-import { themes as prismThemes } from 'prism-react-renderer';
+import { themes as prismThemes } from 'prism-react-renderer'
 // import { remarkSnippet } from "./src/plugins/remark-snippet.js"
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
@@ -95,7 +95,7 @@ const config = {
           src: 'img/project-management.png',
         },
         items: [
-          { type: "doc", position: "left", docId: "start/getting_started", label: "Docs", sidebarId: "docs" },
+          { type: "doc", position: "left", docId: "index", label: "Docs", sidebarId: "docs" },
           { type: "docSidebar", position: "left", sidebarId: "examples", label: "Examples" },
           {
             href: "/discord",

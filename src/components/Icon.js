@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react'
 
 export default function Icon({ name, size = 24 }) {
   return (
@@ -7,5 +7,5 @@ export default function Icon({ name, size = 24 }) {
       data-icon={name}
       style={{ "--svg-icon-size": `${size}px` }}
     ></span>
-  );
+  )
 }

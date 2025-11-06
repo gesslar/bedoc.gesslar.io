@@ -20,24 +20,27 @@ const sidebars = {
     "index",
     {
       type: "category",
-      label: "Getting Started",
+      label: "Your Journey Begins Here",
       collapsible: true,
       collapsed: false,
       items: [
-        "start/getting_started",
         "start/installation",
         "start/configuration",
         "start/discovery",
       ]
     },
     {
-      "Building Actions": [
-        "actions/actions",
-        "actions/parsers",
-        "actions/printers",
-        "actions/contracts",
-        "actions/hooks",
-      ]
+      type: "category",
+      label: "Guides",
+      collapsible: true,
+      collapsed: false,
+      items: [
+        "guides/actions",
+        "guides/parsers",
+        "guides/printers",
+        "guides/contracts",
+        "guides/hooks",
+      ],
     },
     {
       "Objects": [

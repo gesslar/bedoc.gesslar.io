@@ -5,8 +5,8 @@ hide_title: true
 
 Inline CSS example: <code className="language-css">`p { color: red; }`</code>
 
-import Tabs from '@theme/Tabs'
-import TabItem from '@theme/TabItem'
+import Tabs from "@theme/Tabs"
+import TabItem from "@theme/TabItem"
 
 BeDoc offers a flexible, cascading, priority-based configuration system that
 adapts to different use cases. It allows developers to configure the tool via

@@ -3,7 +3,7 @@ title: Some free stuff I got
 hide_title: true
 ---
 
-import Icon from "@site/src/components/Icon";
+import Icon from "@site/src/components/Icon"
 
 # Attributions
 
