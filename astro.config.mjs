@@ -2,7 +2,7 @@ import { defineConfig } from 'astro/config'
 import starlight from '@astrojs/starlight'
 
 export default defineConfig({
-  site: 'https://bedoc.gesslar.dev',
+  site: 'https://bedoc.gesslar.io',
   integrations: [
     starlight({
       title: 'BeDoc',
