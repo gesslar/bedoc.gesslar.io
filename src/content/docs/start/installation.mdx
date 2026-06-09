@@ -4,8 +4,8 @@ title: Installation
 
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 
-Installation of BeDoc is straightforward and can be done via npm or yarn. The
-tool was built and tested on Node.js v23.5.0.
+Installation of BeDoc is straightforward and can be done via npm or yarn. BeDoc
+requires **Node.js v24 or later** (`engines.node` is `>=24`).
 
 ## Installation
 
@@ -46,6 +46,25 @@ development dependency.
   ```
   </TabItem>
 </Tabs>
+
+### No install (npx)
+
+You don't have to install BeDoc at all. `npx` will fetch and run it on demand —
+handy for one-off runs, trying it out, or CI steps where you'd rather not add a
+dependency.
+
+```sh
+# Run the latest published version directly
+npx @gesslar/bedoc --version
+
+# Generate docs in a single shot
+npx @gesslar/bedoc -l lpc -f markdown -i "src/**/*.c" -o docs
+```
+
+:::tip
+If BeDoc is already a dependency of your project, plain `npx bedoc` will use the
+locally installed copy instead of downloading it.
+:::
 
 ## Verifying Your Installation
 

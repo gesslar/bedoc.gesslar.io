@@ -4,135 +4,68 @@ title: Modules
 
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 
-A module is any JavaScript file that contains one or more, or a combination
-of printers and parsers and exports two arrays.
+A **module** is how you package and ship [actions](/guides/actions/) so BeDoc
+can [discover](/start/discovery/) them. In practice a module is an npm package
+whose `package.json` lists its action files under a `bedoc.actions` array.
 
-1. An **array of objects** providing each action's meta information
-   implementation.
-2. An **array of strings** defining the contract terms for each action, or
-   references to external files that contain such contracts.
+## Action files
 
-:::note
+Each action lives in its own JavaScript file and **default-exports a single
+action class** ([parser](/guides/parsers/) or [formatter](/guides/formatters/)):
 
-Each array must be of the same size and in the same order, with each action in
-the first array corresponding to the contract in the second.
-
-:::
-
-In this way, one may have one or more action implementations, each with its own
-contract, such that one might be able to provide any number of actions (parsers
-and printers) within the same file. Making this incredibly portable.
-
-## Actions
-
-The first array is an array of objects that define the [actions](/guides/actions/). Each object
-has properties and methods that BeDoc calls, if present.
-
-### Mandatory elements
-
-#### Properties
-
-- **`meta`** - The meta object within an action describes information about
-  the object. It has two required properties.
-
-  - *`action`* - Must be one of
-    - `parse` for parsers
-    - `print` for printers
-
-  - *`language`* - For parsers, this identifies the language handled by this
-    action
-  - *`format`* - For printers, this identifies the output format for this
-    action
-
-
-<Tabs>
-  <TabItem label="Parser">
 ```js
+import { ActionBuilder } from "@gesslar/actioneer"
+
+export default class MyParser {
+  static meta = Object.freeze({
+    kind: "parser",
+    input: "mylang",
+    terms: "ref://./bedoc-mylang-parser.yaml",
+  })
+
+  setup = builder => builder.do("Parse", this.#parse)
+  #parse = ctx => ({ functions: [] })
+}
+```
+
+Each file's contract lives in a separate [Terms](/guides/contracts/) file
+referenced by `meta.terms`.
+
+## Declaring your actions
+
+List each action file in your `package.json` under `bedoc.actions`. A single
+package may provide any number of parsers and formatters:
+
+```json
 {
-  meta: {
-    action: "parse",
-    language: "lua",
+  "name": "bedoc-mylang",
+  "version": "1.0.0",
+  "type": "module",
+  "bedoc": {
+    "actions": [
+      "./bedoc-mylang-parser.js",
+      "./bedoc-markdown-formatter.js"
+    ]
   }
 }
 ```
-  </TabItem>
-  <TabItem label="Printer">
-```js
-{
-  meta: {
-    action: "print",
-    format: "wikitext",
-  }
-}
-```
-  </TabItem>
-</Tabs>
 
-#### Methods
+## Naming conventions
 
-- **`run({file,moduleContent})`** - The `run()` method is the interface to
-  the action that is called by BeDoc to initiate it. When called, BeDoc will
-  pass an object containing a [FileMap](/objects/file_and_dir/) of the current
-  file being processed and the content to be processed.
+Follow BeDoc's naming so your modules are easy to find and recognise:
 
-  ```javascript
-  {
-    async run({file, moduleContent}) {}
-  }
-  ```
+| Action    | Package name pattern        |
+| --------- | --------------------------- |
+| Parser    | `bedoc-<language>-parser`   |
+| Formatter | `bedoc-<format>-formatter`  |
 
-  In the case of a parser, the `moduleContent` will be the plain text from
-  the file that was read.
+## How BeDoc finds them
 
-  In the case of a printer, it will be a structured object that has been
-  produced by the parser.
+When installed (locally or globally), BeDoc scans `node_modules` for packages
+with a `bedoc` entry and loads the files listed in `bedoc.actions`. It then
+validates each action's [`meta`](/guides/actions/) and
+[contract](/guides/contracts/) before pairing a parser with a formatter.
 
-### Optional elements
-
-Optionally, there are additional methods that may be specified in your action
-that BeDoc will call if present.
-
-#### Methods
-
-- `setup({log})` - This method will be called before the `run()`, providing
-  an opportunity to perform some setup functions, such as caching the passed
-  instance of the [Logger](/objects/logger/) class in your action.
-
-  ```javascript
-  {
-    async setup({log}) {
-      this.log = log
-      this.log.info(`Ready to ${this.meta} some ${this.language || this.format}!`)
-    }
-  }
-  ```
-
-- `cleanup()` - This method will be called as BeDoc is shutting down, providing
-  an opportunity to do some finalisation or cleanup, if such a need exists.
-
-  ```javascript
-  {
-    async cleanup() {
-      this.log.info(`Bye bye. 😿`)
-    }
-  }
-  ```
-
-:::note
-
-Each `setup()` and `cleanup()` for each action will occur once per
-BeDoc lifecycle. Unlike `run()`, which gets called for every module
-it processes, these methods only occur at the beginning and the end
-of the entire run.
-
-:::
-
-## Contracts
-
-The second array is one of strings that define the contract terms for each
-action, in the same order as the first array. These are expressed as YAML or
-JSON5 strings, providing the declaration of expectation for input, in the case
-of printers and the promise of output, in the case of parsers.
-
-Read the [Contracts Guide](/guides/contracts/) to learn how to create contracts
-for BeDoc.
+Read more in the [Discovery](/start/discovery/) guide. For local iteration you
+can skip packaging entirely and point BeDoc straight at a file with `--parser` /
+`--formatter`, or at a directory of mocks with `--mock`.

@@ -48,10 +48,13 @@ existing tools don't.
 
 ```bash
 # Install globally
-npm i -g bedoc
+npm i -g @gesslar/bedoc
 
 # Or add to your project
-npm i --save-dev bedoc
+npm i --save-dev @gesslar/bedoc
+
+# Or run without installing
+npx @gesslar/bedoc --version
 ```
 
 ### 2. Generate Documentation
@@ -109,12 +112,12 @@ BeDoc's parsers analyze your code and extract meaningful documentation, even
 for niche languages. Create custom parsers to support any syntax or
 annotations. [Learn More About Parsers](/guides/parsers/)
 
-### Printers: Flexible Outputs
+### Formatters: Flexible Outputs
 
-Printers transform parsed data into your desired format, from Markdown to less
+Formatters transform parsed data into your desired format, from Markdown to less
 common formats like Wikitext. Async support enables powerful integrations like
 fetching additional data during formatting. [Learn More About
-Printers](/guides/printers/)
+Formatters](/guides/formatters/)
 
 ### Hooks: Customize Every Step
 
@@ -159,7 +162,7 @@ entries.
 ## Explore More
 
 - **[Parsers](/guides/parsers/)**: Create custom parsers for your language or framework.
-- **[Printers](/guides/printers/)**: Build printers for your preferred output format.
+- **[Formatters](/guides/formatters/)**: Build formatters for your preferred output format.
 - **[Hooks](/guides/hooks/)**: Modify and enhance the documentation pipeline.
 
 ---

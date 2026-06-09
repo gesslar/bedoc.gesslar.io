@@ -33,16 +33,9 @@ export default defineConfig({
           items: [
             { label: 'Actions', slug: 'guides/actions' },
             { label: 'Parsers', slug: 'guides/parsers' },
-            { label: 'Printers', slug: 'guides/printers' },
+            { label: 'Formatters', slug: 'guides/formatters' },
             { label: 'Contracts', slug: 'guides/contracts' },
             { label: 'Hooks', slug: 'guides/hooks' },
-          ],
-        },
-        {
-          label: 'Objects',
-          items: [
-            { label: 'Logger', slug: 'objects/logger' },
-            { label: 'FileMap and DirMap', slug: 'objects/file_and_dir' },
           ],
         },
         {

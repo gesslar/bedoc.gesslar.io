@@ -4,180 +4,165 @@ title: Actions
 
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 
-## Modules
+Actions are the core of BeDoc's functionality. There are two kinds:
 
-Actions are the core of BeDoc's functionality. They define the primary tasks
-that the tool can perform, such as parsing source code, generating
-documentation, and running custom scripts. Actions are contained within
-modules.
+- **Parsers** read source files and produce a structured object.
+- **Formatters** take that structured object and render it into an output
+  format (Markdown, Wikitext, …).
 
-A module is any JavaScript file that contains one or more, or a combination
-of printers and parsers and exports two arrays.
+An action is a JavaScript file that **default-exports a class**. That class
+declares a little metadata and describes its work as a pipeline. BeDoc
+discovers the action, negotiates its [contract](/guides/contracts/) against a
+partner action, instantiates it, and runs the pipeline over each file.
 
-1. An **array of objects** providing each action's meta information
-   implementation.
-2. An **array of strings** defining the contract terms for each action, or
-   references to external files that contain such contracts.
+## Anatomy of an action
 
-:::note
+Every action class has exactly two required members:
 
-Each array must be of the same size and in the same order, with each action in
-the first array corresponding to the contract in the second.
+1. **`static meta`** — describes what the action is and points at its
+   [contract](/guides/contracts/).
+2. **`setup`** — an arrow function that receives an
+   [`ActionBuilder`](#the-pipeline) and configures the processing pipeline.
 
-:::
+```js
+import { ActionBuilder, ACTIVITY } from "@gesslar/actioneer"
 
-In this way, one may have one or more action implementations, each with its own
-contract, such that one might be able to provide any number of actions (parsers
-and printers) within the same file. Making this incredibly portable.
+export default class MyParser {
+  static meta = Object.freeze({
+    kind: "parser",
+    input: "lua",
+    terms: "ref://./my-parser.yaml",
+  })
 
-## Module content
+  setup = builder => builder
+    .do("Extract blocks", this.#extractBlocks)
+    .do("Process functions", ACTIVITY.SPLIT,
+      ctx => ctx,                 // splitter
+      ctx => ctx,                 // rejoiner
+      new ActionBuilder()
+        .do("Extract signature", this.#extractSignature)
+        .do("Extract description", this.#extractDescription),
+    )
+    .done(this.#finally)
 
-The first array is an array of objects that define the [actions](/guides/actions/). Each object
-has properties and methods that BeDoc calls, if present.
+  #extractBlocks = ctx => { /* … */ }
+  #extractSignature = ctx => { /* … */ }
+  #extractDescription = ctx => { /* … */ }
+  #finally = ctx => ({ functions: ctx })
+}
+```
 
-### Actions
+## `static meta`
 
-#### Mandatory elements
-
-##### Properties
-
-###### `meta`
-
-The meta object within an action describes information about the object. It has
-two required properties.
-
-  - *`action`* - Must be one of
-    - `parse` for parsers
-    - `print` for printers
-  - *`language`* - For parsers, this identifies the language handled by this
-    action
-  - *`format`* - For printers, this identifies the output format for this
-    action
+`meta` is a frozen object. The required fields depend on the `kind`.
 
 <Tabs>
   <TabItem label="Parser">
 ```js
-{
-  meta: {
-    action: "parse",
-    language: "lua",
-  }
-}
+static meta = Object.freeze({
+  kind: "parser",                  // required
+  input: "lua",                    // required — the language this parser reads
+  terms: "ref://./my-parser.yaml", // required — path to the contract
+})
 ```
   </TabItem>
-  <TabItem label="Printer">
+  <TabItem label="Formatter">
 ```js
-{
-  meta: {
-    action: "print",
-    format: "wikitext",
-  }
-}
+static meta = Object.freeze({
+  kind: "formatter",                  // required
+  format: "markdown",                 // required — the format this emits
+  extension: "md",                    // required — output file extension
+  terms: "ref://./my-formatter.yaml", // required — path to the contract
+})
 ```
   </TabItem>
 </Tabs>
 
-##### Methods
+| Field       | Applies to | Meaning |
+| ----------- | ---------- | ------- |
+| `kind`      | both       | `"parser"` or `"formatter"`. |
+| `input`     | parser     | The language identifier matched against `--language`. |
+| `format`    | formatter  | The output format matched against `--format`. |
+| `extension` | formatter  | Extension used for written output files (e.g. `md`). |
+| `terms`     | both       | A `ref://` path to the action's [contract](/guides/contracts/) YAML/JSON file, resolved relative to the action file. |
 
-###### `run()`
+## The pipeline
 
-The `run()` method is the interface to the action that is called by BeDoc to
-process a document. When called, BeDoc will pass an object containing a
-[FileMap](/objects/file_and_dir/) of the current file being processed and the
-content to be processed.
+Instead of a single `run()` method, an action describes its work as a chain of
+named steps using the fluent
+[`ActionBuilder`](https://actioneer.gesslar.io/reference/action-builder/) API
+from [Actioneer](https://actioneer.gesslar.io/). The `setup` field is an arrow
+function (so `this` is the action instance) that receives the builder and
+returns it configured:
 
-  ```javascript
-  {
-    async run({file, moduleContent}) {}
-  }
-  ```
-
-In the case of a parser, the `moduleContent` will be the plain text from the
-file that was read.
-
-In the case of a printer, it will be a structured object that has been produced
-by the parser.
-
-#### Optional elements
-
-Optionally, there are additional methods that may be specified in your action
-that BeDoc will call if present.
-
-##### Methods
-
-##### `setup()`
-
-This method is called after the action has been instantiated, but before any
-jobs have been called via the `run()` method, providing an opportunity to
-perform some setup functions, such as caching the passed instance of the
-[`Logger`](/objects/logger/) class in your action.
-
-```javascript
-{
-  async setup({log}) {
-    this.log = log
-    this.log.info(
-      `Ready to ${this.meta} some ${this.language || this.format}!`
-    )
-  }
-}
+```js
+setup = builder => builder
+  .do("Step name", this.#stepMethod)
+  .do("Another step", this.#anotherMethod)
+  .done(this.#finalize)
 ```
 
-##### `cleanup()`
+- **`.do(name, fn)`** adds a step. Each step receives the current context
+  (`ctx`) and returns the context for the next step.
+- **[`.do(name, ACTIVITY.SPLIT, …)`](https://actioneer.gesslar.io/guides/split/)**
+  fans the context out into items, runs a sub-pipeline over each (in parallel,
+  up to `--maxConcurrent`), then rejoins the results.
+- **[`.done(fn)`](https://actioneer.gesslar.io/guides/done/)** registers the
+  final step that produces the action's result.
 
-This method will be called as BeDoc is shutting down, providing an opportunity
-to do some finalisation or cleanup, if such a need exists.
-
-```javascript
-{
-  async cleanup() {
-    this.log.info(`Bye bye. 😿`)
-  }
-}
-```
-
-:::note
-
-Each `setup()` and `cleanup()` for each action will occur once per
-BeDoc lifecycle. Unlike `run()`, which gets called for every module
-it processes, these methods only occur at the beginning and the end
-of the entire run.
-
+:::tip[Built on Actioneer]
+BeDoc's pipelines are [Actioneer](https://actioneer.gesslar.io/) pipelines. See
+the Actioneer docs for the full [ActionBuilder
+API](https://actioneer.gesslar.io/reference/action-builder/),
+[ACTIVITY modes](https://actioneer.gesslar.io/reference/activity/),
+[SPLIT parallelism](https://actioneer.gesslar.io/guides/split/), and
+[nested pipelines](https://actioneer.gesslar.io/guides/nested-pipelines/).
 :::
 
-### Contracts
+The **step names matter**: they are the anchor points for
+[hooks](/guides/hooks/). A step named `"Format function"` can be wrapped by a
+`before$formatFunction` / `after$formatFunction` hook (the hook name is the
+camelCase of the step name).
 
-The second array is one of strings that define the contract terms for each
-action, in the same order as the first array. These are expressed as YAML or
-JSON5 strings, providing the declaration of expectation for input, in the case
-of printers and the promise of output, in the case of parsers.
+### What a parser produces / a formatter consumes
 
-Read the [Contracts Guide](/guides/contracts/) to learn how to create contracts
-for BeDoc.
+A parser's pipeline ends by producing the structured object promised by its
+contract — typically `{ functions: [ … ] }`. That object is handed to the
+matched formatter, whose pipeline renders it to a string. The shape of that
+object is governed by the [contract](/guides/contracts/) the two actions
+negotiate.
 
-#### Parse
+## Logging
 
-The `parse` action reads source code files, extracts documentation information,
-and generates a structured output that can be consumed by printers. Parsers are
-responsible for analyzing the source code and producing a structured output.
+Actions are **not** handed a logger instance — there is no `this.log` on your
+action. BeDoc's own debug output is controlled by the `--debug` /
+`--debugLevel` [configuration](/start/configuration/) options.
 
-Read the [Parser Guide](/guides/parsers/) to learn how to create parsers for
-BeDoc.
+## Packaging
 
-#### Print
+A single action file default-exports a single action. To ship one or more
+actions as an installable package, list the files under a `bedoc.actions` array
+in your `package.json` so BeDoc can [discover](/start/discovery/) them:
 
-The `print` action transforms parsed documentation into specific output formats
-like Markdown, HTML, or any other format you need. Printers are responsible for
-formatting the documentation content.
+```json
+{
+  "name": "bedoc-mylang-parser",
+  "version": "1.0.0",
+  "type": "module",
+  "bedoc": {
+    "actions": ["./bedoc-mylang-parser.js"]
+  }
+}
+```
 
-Read the [Printer Guide](/guides/printers/) to learn how to create printers for
-BeDoc.
+See the [Modules](/guides/modules/) guide for packaging and naming conventions,
+and the [Parsers](/guides/parsers/) and [Formatters](/guides/formatters/)
+guides for end-to-end examples.
 
 ## Hooks
 
-While not strictly an action, hooks provide a way to modify and enhance the
-documentation process by injecting custom logic at specific points. With full
-async/await support, hooks can integrate with external services, APIs, and
-tools.
+Actions expose their named steps as [hook](/guides/hooks/) points, letting users
+inject custom logic with `before$`/`after$` handlers — without touching the
+action itself.
 
-Read the [Hooks Guide](/guides/hooks/) to learn how to create custom hooks for BeDoc.
+Read the [Hooks Guide](/guides/hooks/) to learn more.

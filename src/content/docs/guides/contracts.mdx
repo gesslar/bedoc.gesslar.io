@@ -7,14 +7,39 @@ import { Tabs, TabItem } from '@astrojs/starlight/components';
 ## **Understanding Contracts**
 
 Contracts in BeDoc define the expected structure of input and output data for
-**parsers** and **printers**. They ensure that actions are compatible with each
-other, preventing mismatches and inconsistencies.
+**parsers** and **formatters**. They ensure that actions are compatible with
+each other, preventing mismatches and inconsistencies.
+
+### **Where contracts live**
+
+A contract is a separate **Terms** file (YAML or JSON5) that an
+[action](/guides/actions/) points at through its `meta.terms` field using a
+`ref://` path, resolved relative to the action file:
+
+```js
+static meta = Object.freeze({
+  kind: "parser",
+  input: "lua",
+  terms: "ref://./bedoc-lua-parser.yaml",
+})
+```
+
+Each Terms file should declare the BeDoc action `$schema` so editors can
+validate it:
+
+```yaml
+# yaml-language-server: $schema=https://schema.gesslar.dev/bedoc/v1/bedoc-action.json
+$schema: https://schema.gesslar.dev/bedoc/v1/bedoc-action.json
+provides:
+  type: object
+  # …
+```
 
 ### **Getting Meta with It**
 
 When you create a contract, you're defining a schema that describes the
-shape of the data the action will accept. This schema follows the BeDoc
-schema (which, yes, follows the JSON schema schema... it's schemas all
+shape of the data the action will accept or provide. This schema follows the
+BeDoc schema (which, yes, follows the JSON schema schema... it's schemas all
 the way down).
 
 ### **The Lifecycle of a Contract**
@@ -22,19 +47,20 @@ the way down).
 1. **Negotiation Phase** → A contract starts as a **declaration of intent**,
    outlining what an action claims it will accept or provide.
 2. **Validation Phase** → BeDoc validates the contract to ensure it follows the
-   contract schema and that a parser-printer pair agrees on expectations.
+   contract schema and that a parser-formatter pair agrees on expectations.
 3. **Enforcement Phase** → Once validated, the contract **becomes a schema**.
    BeDoc ensures that:
    - A **parser's output matches its contract** before proceeding.
-   - A **printer receives data that aligns with its contract**.
+   - A **formatter receives data that aligns with its contract**.
    - The contract remains **binding** for the entire data processing cycle.
 
 ### **How Contracts Are Used**
 
 BeDoc actively **enforces contracts at runtime**, ensuring that data remains
 consistent throughout processing. If a parser's output does not match its
-contract, the process will halt before passing data to the printer. Similarly,
-the printer must confirm the input matches its agreed structure before execution.
+contract, the process will halt before passing data to the formatter. Similarly,
+the formatter must confirm the input matches its agreed structure before
+execution.
 
 ### **Key Contract Elements**
 
@@ -66,7 +92,7 @@ provides:
   </TabItem>
 </Tabs>
 
-### **Minimal Printer Contract Example**
+### **Minimal Formatter Contract Example**
 
 <Tabs>
   <TabItem label="YAML">

@@ -11,9 +11,9 @@
     "astro": "astro"
   },
   "engines": {
-    "node": ">=24.11.0"
+    "node": ">=24"
   },
-  "license": "Unlicense",
+  "license": "0BSD",
   "dependencies": {
     "@astrojs/starlight": "^0.38.2",
     "sharp": "^0.34.5"

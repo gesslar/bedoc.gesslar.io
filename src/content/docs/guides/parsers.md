@@ -2,165 +2,173 @@
 title: Parsers
 ---
 
-This guide explains how to create custom parsers for BeDoc. Parsers are
-responsible for analyzing source code and extracting documentation information,
-producing a structured output that can be consumed and transformed by printers.
+This guide explains how to create custom parsers for BeDoc. Parsers read source
+files and extract documentation into a structured object that a
+[formatter](/guides/formatters/) can render.
 
-## Parser Structure
+A parser is an [action](/guides/actions/): a JavaScript file that
+default-exports a class with a `static meta` block and a `setup` pipeline.
 
-A BeDoc parser consists of four parts:
+## Parser structure
 
-1. **Meta Information**: Defines the language. <span class="pill badge--danger">Required</span>
-2. **Contract**: Specifies the parser interface. <span class="pill badge--danger">Required</span>
-3. **Parser Object**: Implements the parsing logic. <span class="pill badge--danger">Required</span>
-4. **Hooks**: Supports [hook points](/guides/hooks/) for custom logic.
-   <span class="pill badge--warning">Optional</span>
-   <span class="pill badge--warning">External</span>
+A BeDoc parser has three parts:
 
-A parser action is contained in a JavaScript action file.
+1. **Meta** — declares the language it reads and points at its contract.
+   (_required_)
+2. **Contract** — an external [Terms](/guides/contracts/) file describing the
+   object the parser **provides**. (_required_)
+3. **Pipeline** — the steps that turn raw text into that object. (_required_)
 
-Here's the minimal structure for a BeDoc parser:
+Hooks are supported automatically at every named step. (_optional_, _external_)
 
-### Parser
+### Minimal parser
 
-```javascript
-{
-  // Define meta information
-  meta = {
-    action: "parse",                // required
-    language: "lpcdocs",            // required
-    shape: "Chez is yum look 🧀"    // you can leave helpful notes
-  },
+```js
+import { ActionBuilder, ACTIVITY } from "@gesslar/actioneer"
 
-  /**
-   * This is the setup function, called in advance of running the job.
-   *
-   * @param {object} setup An object containing utility objects exposed by BeDoc
-   * @param {object} setup.log A logging utility provided by BeDoc
-   */
-  setup(setup) {
-    ({ log: this.log } = setup)
-  },
+export default class LuaParser {
+  static meta = Object.freeze({
+    kind: "parser",
+    input: "lua",                       // matched against --language lua
+    terms: "ref://./bedoc-lua-parser.yaml",
+  })
 
-  /**
-   * This is the action to print structured object to text.
-   *
-   * @param {object} module Data coming in from the printer
-   * @param {string} module.file The file object representing the file
-   *  being currently being processed
-   * @param {object[]} module.moduleContent A string containing the
-   *  information read from the file.
-   * @returns {Promise<object>} An object containing the structured data
-   *  (probably).
-   */
-  async run(module) {
-    // Parse the content and return a response
-    const {file: {module: moduleName}, moduleContent} = module
+  // `setup` configures the pipeline. Step names become hook anchor points.
+  setup = builder => builder
+    .do("Extract blocks", this.#extractBlocks)
+    .do("Process functions", ACTIVITY.SPLIT,
+      ctx => ctx,                       // splitter: hand each block onward
+      ctx => ctx,                       // rejoiner: collect the results
+      new ActionBuilder()
+        .do("Extract signature", this.#extractSignature)
+        .do("Extract description", this.#extractDescription)
+        .do("Extract tags", this.#extractTags),
+    )
+    .done(this.#finally)
 
-    // WHEEEEEEEE CHEEEEEEEEEEEZZZZZZZZ
-    const yay = () => Math.round(Math.random(2)) ? "!" : "?"
-
-    const cheezzez = []
-    for(let x = 0; x < Math.floor(Math.random(10)*100)+10; x++) {
-      cheezzez.push(
-        `I can hazzz: ${this.meta.shape}${yay()}`
-      )
+  // The first step receives the raw file content as `ctx`.
+  #extractBlocks = ctx => {
+    const blocks = []
+    for(const line of ctx.split(/\r?\n/)) {
+      // …find doc blocks, push structured chunks…
     }
-
-    const result = {
-      nomnom: cheezzez
-    }
-
-    return {
-      status: "success",                  // Required
-      result,                             // Required
-    }
+    return blocks
   }
+
+  #extractSignature = ctx => ctx
+  #extractDescription = ctx => ctx
+  #extractTags = ctx => ctx
+
+  // The final step returns the object promised by the contract.
+  #finally = ctx => ({ functions: ctx })
 }
 ```
 
-### Contract
+The first pipeline step receives the file's text as its context. Each step
+returns the context passed to the next. The `.done()` step returns the
+structured result — the shape your contract **provides**.
 
-```javascript
-`
+:::tip
+The pipeline API (`ActionBuilder`, `ACTIVITY.SPLIT`, `.done()`) comes from
+[Actioneer](https://actioneer.gesslar.io/) — see its docs for the full
+reference.
+:::
+
+## The contract
+
+A parser declares what it produces in an external [Terms](/guides/contracts/)
+file referenced by `meta.terms` (`ref://` is resolved relative to the action
+file). A parser's contract uses `provides:`:
+
+```yaml
+# bedoc-lua-parser.yaml
+# yaml-language-server: $schema=https://schema.gesslar.dev/bedoc/v1/bedoc-action.json
+$schema: https://schema.gesslar.dev/bedoc/v1/bedoc-action.json
 provides:
-  root:
-    dataType: object
-    contains:
-      nomnom:
-        dataType: string[]
-`
+  type: object
+  required:
+    - functions
+  properties:
+    functions:
+      type: array
+      items:
+        type: object
+        required: [name, signature]
+        properties:
+          name: { type: string }
+          signature:
+            type: object
+            properties:
+              name: { type: string }
+              parameters:
+                type: array
+                items: { type: string }
+          description:
+            type: array
+            items: { type: string }
 ```
 
-## Hook Support
+See the [Contracts](/guides/contracts/) guide for the full structure.
 
-Parsers automatically support [hooks](/guides/hooks/), allowing users to modify the
-content during parsing process. The following hooks are available:
+## Hook support
 
-- `module_start`: Before parsing begins
-- `section_start`: At the beginning of a new section over which the parser is
-  iterating.
-- `enter` and `exit`: When entering and exiting specific parts of a section
-  that are being parsed (ex. description, parameters, returns, function
-  signature).
-- `section_end`: At the end of a section.
-- `module_end`: After parsing completes
+Every named pipeline step is a hook anchor. A user can wrap a step named
+`"Extract tags"` with `before$extractTags` / `after$extractTags` handlers (the
+hook name is the camelCase of the step name) to mutate the context as it flows
+through. See the [Hooks](/guides/hooks/) guide.
 
-## Example Implementation
+## Example implementations
 
-You can see examples of parser implementations on [GitHub](https://github.com/gesslar/BeDoc/tree/main/examples/node_modules_test).
+Real parsers (LPC and Lua) live in the BeDoc repository under
+[`examples/node_modules_test`](https://github.com/gesslar/BeDoc/tree/main/examples/node_modules_test).
 
-## Best Practices
+## Best practices
 
-1. **Error Handling**: Be sure to catch and properly report errors from async
-   operations.
-2. **Async Support**: Make your parser async to handle large files efficiently
-   and support async hooks.
-3. **Validation**: Validate input parameters and document structure before
-   processing.
-4. **State Management**: Keep track of parser state (e.g., inside comment
-   block, current function) clearly and reset it appropriately.
+1. **Keep steps small and named.** Each named step is a hook point and a unit
+   of testability.
+2. **Honour your contract.** The object you `.done()` with must match what your
+   Terms file `provides:`.
+3. **Use `ACTIVITY.SPLIT` for per-item work** (e.g. per-function) so it runs
+   concurrently.
+4. **Reset state deliberately** if your steps carry parsing state.
 
-## Testing Your Parser
+## Testing your parser
 
-BeDoc provides multiple ways to test your parsers:
+**Mock mode** — point BeDoc at a directory of mock actions:
 
-1. **Mock Mode**: Test using a local mock environment:
-   ```bash
-   bedoc --mock ./mock_dir -l mylang -f markdown -i test/*.ml -o test/docs
-   ```
+```bash
+bedoc --mock ./mock_dir -l mylang -f markdown -i "test/*.ml" -o test/docs
+```
 
-2. **Direct File Usage**: Test your parser file directly without installation:
+**Direct file** — use your parser file without packaging it:
 
-   ```bash
-   bedoc --parser ./my-parser.js --format markdown -i test/*.ml -o test/docs
+```bash
+bedoc --parser ./my-parser.js --format markdown -i "test/*.ml" -o test/docs
+# Or the short form
+bedoc -p ./my-parser.js -f markdown -i "test/*.ml" -o test/docs
+```
 
-   # Or use the short form
-   bedoc -p ./my-parser.js -f markdown -i test/*.ml -o test/docs
-   ```
+:::note
+`--parser`/`-p` is mutually exclusive with `--language`/`-l`: a *language*
+finds a matching parser, while a *parser* path is used directly.
+:::
 
-These options let you test your parser without packaging or installing it.
-The direct file usage is particularly helpful during initial development
-and debugging.
+## Publishing your parser
 
-## Publishing Your Parser
-
-When ready to publish, package your parser following BeDoc's naming and
-structure conventions:
+Package your parser following BeDoc's naming and structure conventions, and list
+the action file(s) under `bedoc.actions`:
 
 ```json
 {
-  "name": "bedoc-mylang-parser",  // bedoc-<language>-parser-<anything_else>
+  "name": "bedoc-mylang-parser",
   "version": "1.0.0",
   "type": "module",
   "description": "MyLang parser for BeDoc",
   "bedoc": {
-    "actions": [
-      "./bedoc-mylang-parser.js"
-    ]
+    "actions": ["./bedoc-mylang-parser.js"]
   }
 }
 ```
 
-This structure allows BeDoc to automatically discover and load your parser when
-installed.
+This lets BeDoc automatically [discover](/start/discovery/) and load your parser
+when it's installed.

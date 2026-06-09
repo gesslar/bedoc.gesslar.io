@@ -4,9 +4,9 @@ title: Discovery
 
 ## Discovery in BeDoc
 
-Discovery in BeDoc is the process of locating the right actions to handle your request. Instead of requiring you to manually specify a parser or printer, BeDoc allows you to define **what** you need in terms of language and format, and it will take care of **how** that need is fulfilled.
+Discovery in BeDoc is the process of locating the right actions to handle your request. Instead of requiring you to manually specify a parser or formatter, BeDoc allows you to define **what** you need in terms of language and format, and it will take care of **how** that need is fulfilled.
 
-However, if you prefer to be explicit, you can still specify a particular parser or printer—Discovery won't stand in your way.
+However, if you prefer to be explicit, you can still specify a particular parser or formatter—Discovery won't stand in your way.
 
 ## How It Works
 During the Discovery process, BeDoc will:
@@ -15,7 +15,7 @@ During the Discovery process, BeDoc will:
    - a `mock` directory, *or*
    - any configuration expression specifying:
      - language and/or format directives
-     - parser and/or printer directives
+     - parser and/or formatter directives
 2. **search for applicable actions** within:
    - the global NPM `node_modules`
    - the local project's **`node_modules`**
@@ -26,7 +26,7 @@ During the Discovery process, BeDoc will:
 
 :::caution[Configure Decisively]
 
-Once BeDoc has compiled all viable options, it attempts to pair a parser with a printer. However, BeDoc does **not** do indecision:
+Once BeDoc has compiled all viable options, it attempts to pair a parser with a formatter. However, BeDoc does **not** do indecision:
 
 - if it finds more than one pairing, it errors.
 - if it finds no valid pairings, it errors.

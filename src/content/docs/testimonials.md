@@ -29,7 +29,7 @@ heed the wisdsom from this definitely impartial audience that I did not pay.
 > exceptional flexibility and thoughtful architecture. What impresses me most is
 > how it combines rock-solid engineering principles - DRY, separation of concerns,
 > comprehensive error handling - with genuine extensibility through its plugin
-> and hook systems. The contract-based interaction between parsers and printers
+> and hook systems. The contract-based interaction between parsers and formatters
 > is particularly elegant, ensuring reliability while maintaining complete freedom
 > in how documentation is processed. Whether you're documenting an obscure language
 > like LPC or need to output to unconventional formats, BeDoc's 'text in, text out'

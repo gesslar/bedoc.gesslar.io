@@ -29,7 +29,7 @@ The following configuration fields are supported by BeDoc:
 |    `exclude`    | Files or directories to exclude                 |      No      |   `["src/**/*.test.js"]`    |
 |    `output`     | Output directory for generated docs             |      No      |        `"docs/api"`         |
 |    `parser`     | Path to a JS module containing a parser action  |      No      | `"./engines/my-parser.js"`  |
-|    `printer`    | Path to a JS module containing a printer action |      No      | `"./engines/my-printer.js"` |
+|    `formatter`    | Path to a JS module containing a formatter action |      No      | `"./engines/my-formatter.js"` |
 |    `config`     | Path to a JSON5/YAML configuration file         |      No      |   `"./bedoc.config.json"`   |
 |      `sub`      | Subconfiguration options from config file       |      No      |
 |     `mock`      | Enables mock mode for testing modules           |      No      |     `./test/bedoc-mock`     |
@@ -113,33 +113,33 @@ conflicts with another will result in an error.
 | **Field**  | **Exclusive of** |
 | ---------- | ---------------- |
 | `language` | `parser`         |
-| `format`   | `printer`        |
+| `format`   | `formatter`        |
 
 `language` and `parser` serve the same goal, with the difference being that
 specifying a language will find a matching parser, whereas, specifying a
 parser will use that parser directly. The same is true of `format` and
-`printer`.
+`formatter`.
 
 :::note[Mock configuration]
 
 While not exclusive, the [`mock`](#mock-mode) option will simply ignore all
-of `language`, `parser`, `format`, and `printer` when present.
+of `language`, `parser`, `format`, and `formatter` when present.
 
 :::
 
 ### Discovery
 
-BeDoc will automatically discover and load parsers and printers based on the
+BeDoc will automatically discover and load parsers and formatters based on the
 configuration provided. This allows for seamless integration of custom modules.
 
 Discovery will search in the global `node_modules` directory, as well as the
-local project directory. When using the `language` and `format` options, BeDoc will attempt to match parser and printer actions in these locations.
+local project directory. When using the `language` and `format` options, BeDoc will attempt to match parser and formatter actions in these locations.
 
 Read more about [Discovery](/start/discovery/).
 
 ### Mock Mode
 
-When a `mock` path is provided, BeDoc will only use mock parsers and printers
+When a `mock` path is provided, BeDoc will only use mock parsers and formatters
 located there for testing. This allows you to test your documentation workflow
 without needing to install custom modules. Simply provide the path to the mock
 directory and BeDoc will "discover" the mock modules there.
@@ -360,11 +360,8 @@ sources and values.
 ### Debug Levels
 
 The `debugLevel` option accepts values from 0 to 4, with increasing verbosity and
-detail.
-
-For more information about debug messages, you can review the exposed
-[Logger object](/objects/logger/) that is available to all actions and
-hooks.
+detail. These settings control BeDoc's own internal logging only — actions and
+hooks are not given a logger.
 
 | **Level** | **Description**                                                          |
 | :-------: | ------------------------------------------------------------------------ |
