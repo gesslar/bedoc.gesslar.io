@@ -16,6 +16,6 @@
   "license": "0BSD",
   "dependencies": {
     "@astrojs/starlight": "^0.41.1",
-    "sharp": "^0.35.2"
+    "sharp": "^0.35.3"
   }
 }
